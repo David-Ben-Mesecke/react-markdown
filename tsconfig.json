@@ -1,18 +1,17 @@
 {
   "compilerOptions": {
-    "checkJs": true,
-    "customConditions": ["development"],
-    "declarationMap": true,
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "exactOptionalPropertyTypes": true,
-    "jsx": "preserve",
-    "lib": ["dom", "es2022"],
-    "module": "node16",
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["DOM", "ES2022"],
+    "jsx": "react-jsx",
     "strict": true,
-    "target": "es2022",
-    "types": ["node"]
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "skipLibCheck": true
   },
-  "exclude": ["coverage/", "node_modules/"],
-  "include": ["**/*.js", "**/*.jsx"]
+  "include": ["src"]
 }

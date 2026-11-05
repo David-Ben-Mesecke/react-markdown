@@ -9,6 +9,7 @@
     "Beau Roberts <beau.roberts@autodesk.com>",
     "Charlie Chen <doveccl@live.com>",
     "Christian Murphy <christian.murphy.42@gmail.com>",
+    "Christian Schiffer <chr.schiffer@gmail.com",
     "Christoph Werner <christoph@codepunkt.de>",
     "Danny <dannyharding10@gmail.com>",
     "Dennis S <denis.s@svsg.co>",
@@ -50,17 +51,17 @@
   "dependencies": {
     "@types/hast": "^3.0.0",
     "@types/mdast": "^4.0.0",
-    "devlop": "^1.1.0",
     "hast-util-to-jsx-runtime": "^2.3.7",
     "html-url-attributes": "^3.0.1",
     "mdast-util-to-hast": "^13.2.1",
     "remark-parse": "^11.0.0",
+    "react-rx": "^7.1.0",
     "remark-rehype": "^11.1.2",
+    "rxjs": "^7.8.2",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.2.0",
     "vfile": "^6.0.3"
   },
-  "description": "React component to render markdown",
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.6",
@@ -84,12 +85,18 @@
     "typescript": "^6.0.3",
     "xo": "^5.0.1"
   },
-  "exports": "./index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
-    "index.d.ts.map",
-    "index.d.ts",
-    "index.js",
-    "lib/"
+    "dist"
   ],
   "funding": {
     "type": "opencollective",
@@ -109,8 +116,8 @@
   "license": "MIT",
   "name": "react-markdown",
   "peerDependencies": {
-    "@types/react": ">=18",
-    "react": ">=18"
+    "@types/react": ">=19",
+    "react": ">=19"
   },
   "prettier": {
     "bracketSpacing": false,
@@ -129,19 +136,15 @@
       ]
     ]
   },
-  "repository": "remarkjs/react-markdown",
+  "repository": "David-Ben-Mesecke/reactive-markdown",
   "scripts": {
-    "build": "tsc --build --clean && tsc --build && type-coverage",
-    "format": "remark --frail --output --quiet -- . && prettier --log-level warn --write -- . && xo --fix",
-    "test-api": "node --conditions development --experimental-loader=./script/load-jsx.js --no-warnings test.jsx",
-    "test-coverage": "c8 --100 --exclude script/ --reporter lcov -- npm run test-api",
-    "test": "npm run build && npm run format && npm run test-coverage"
+    "build": "tsc -p ./tsconfig.json",
+    "typecheck": "tsc --noEmit -p ./tsconfig.json",
+    "test:smoke": "node scripts/smoke.mjs",
+    "test": "npm run build && npm run test:smoke"
   },
   "sideEffects": false,
-  "typeCoverage": {
-    "atLeast": 100,
-    "strict": true
-  },
   "type": "module",
-  "version": "10.2.0"
+  "description": "React component to render markdown — AGGI fork: TypeScript + real-time streaming via react-rx/rxjs",
+  "version": "11.0.0"
 }

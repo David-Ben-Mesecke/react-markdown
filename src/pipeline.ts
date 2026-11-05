@@ -1,0 +1,120 @@
+import type {Nodes, Root} from 'hast'
+import {
+  bufferTime,
+  defer,
+  filter,
+  from,
+  map,
+  Observable,
+  of,
+  switchMap
+} from 'rxjs'
+import type {Root as MdastRoot} from 'mdast'
+import type {ReactNode} from 'react'
+import {VFile} from 'vfile'
+
+import {
+  createHastProcessor,
+  createRemarkProcessor,
+  transformTree
+} from './processor.js'
+import {toJsx} from './to-jsx.js'
+import type {Options} from './options.js'
+
+/** Turn any accepted markdown source into a virtual file. */
+function toVFile(source: string | VFile): VFile {
+  if (source instanceof VFile) return source
+  const file = new VFile()
+  if (typeof source !== 'string') {
+    throw new Error(
+      `Unexpected value \`${String(source)}\` for markdown, expected \`string\``
+    )
+  }
+  file.value = source
+  return file
+}
+
+/**
+ * Stage operator: parse markdown text into an mdast tree.
+ *
+ * Reusable on its own; the composed {@link markdown$} wires it together with
+ * the hast + JSX stages.
+ */
+export function parseMarkdown$(
+  source: string | VFile,
+  options?: Options
+): Observable<MdastRoot> {
+  return defer(() => {
+    const file = toVFile(source)
+    const processor = createRemarkProcessor(options)
+    return from(
+      processor.run(processor.parse(file), file) as Promise<MdastRoot>
+    )
+  })
+}
+
+/**
+ * Stage operator: convert an mdast tree into a hast tree (remark-rehype +
+ * rehype plugins + the element/URL transform).
+ */
+export function toHast$(tree: MdastRoot, options?: Options): Observable<Nodes> {
+  return defer(async () => {
+    const processor = createHastProcessor(options)
+    // remark-rehype converts in place and hands back the hast root; rehype
+    // plugins then run on that same tree.
+    const hastTree = (await processor.run(
+      tree as never,
+      new VFile()
+    )) as unknown as Nodes
+    transformTree(hastTree, options ?? {})
+    return hastTree
+  })
+}
+
+/**
+ * Stage operator: render a hast tree to a React element via the JSX runtime.
+ */
+export function renderToReact$(
+  tree: Nodes,
+  options?: Options
+): Observable<ReactNode> {
+  return of(toJsx(tree as Root, options?.components ?? undefined) as ReactNode)
+}
+
+/**
+ * Render a single markdown source to an observable that emits the rendered
+ * element once (supports async remark/rehype plugins).
+ */
+export function markdown$(
+  source: string | VFile,
+  options?: Options
+): Observable<ReactNode> {
+  return parseMarkdown$(source, options).pipe(
+    switchMap((tree) => toHast$(tree, options)),
+    switchMap((tree) => renderToReact$(tree, options))
+  )
+}
+
+/**
+ * Render a live stream of markdown text chunks.
+ *
+ * Chunks are accumulated and re-rendered as the document grows (batched every
+ * `frameMs`) so partial markdown — including syntax split across chunk
+ * boundaries — shows up in real time. The last buffered value is always
+ * flushed, even when the source completes inside a window.
+ */
+export function markdownStream$(
+  source$: Observable<string>,
+  options?: Options,
+  frameMs = 80
+): Observable<ReactNode> {
+  let acc = ''
+
+  return source$.pipe(
+    map((chunk) => (acc += chunk)),
+    bufferTime(frameMs),
+    filter((batch) => batch.length > 0),
+    map((batch) => batch[batch.length - 1]),
+    switchMap((text) => markdown$(text, options))
+  )
+}
